@@ -1,0 +1,11 @@
+software:fastp megahit prodigal METABOLIC diamond gtdbtk bbmap
+fastp --in1 Sample1 --out1 Sample1_R1.fastq.gz --in2 Sample1 --out2 Sample1_R2.fastq.gz -w 5 -h Sample1.fastp.html -j Sample1.fastp.json
+megahit -1 Sample1_R1.fastq.gz -2 Sample1_R2.fastq.gz -o ./Sample1/Sample1 -m 0.9 --min-contig-len 500 -t 45 --continue --presets meta-large --out-prefix Sample1
+prodigal -i Sample1.contigs.fa -o Sample1.genes -d Sample1.nucl.faa -a Sample1.proteins.faa -p meta
+METABOLIC-G.pl -in ./metabolic/Sample1 -out -o ./metabolic/Sample1out
+diamond blastp -query Sample1.proteins.faa -d ~/PCycle.dmnd -out Sample1PCycle.diamond.txt -f 6 -k 1 -e 0.00001 -p 45
+python filter_Generate_ORF2gene.py -s 80 -cov 70-coverage -hit 25 -b Sample1PCycle.diamond.txt
+gtdbtk classify_wf --genome_dir ./Sample1/bin --out_dir ./gtdbtk/Sample1 --cpus 45 --extension fa
+bwa index Sample1.nucl.faa
+bwa mem -k 30 ./Sample1.nucl.faa ./Sample1_R1.fastq.gz ./Sample1_R2.fastq.gz -t 48 > ./Sample1.sam
+pileup.sh in=./rpkm/Sample1.sam ref=./Sample1.nucl.faa rpkm=./Sample1_rpkm.txt
